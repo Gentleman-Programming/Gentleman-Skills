@@ -35,6 +35,49 @@ Maintainers may fast-track exceptional skills that:
 - Are exceptionally well-documented
 - Come from recognized community members
 
+## Automated Validations
+
+All PRs are automatically validated for:
+
+### 1. Conventional Commits
+
+All commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+
+Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+```
+
+**Examples:**
+- `feat(community): add react-native skill`
+- `fix(curated): correct typo in typescript skill`
+- `docs: update README installation steps`
+
+### 2. SKILL.md Format
+
+Community skills are validated for proper structure:
+
+**Required Frontmatter:**
+```yaml
+---
+name: skill-name          # lowercase, hyphens only
+description: >
+  What this skill does.
+  Trigger: When AI should use this.
+metadata:
+  author: your-github-username
+  version: "1.0"
+---
+```
+
+**Required Sections:**
+- `## When to Use` or `## Trigger`
+- `## Critical Patterns` or `## Core Patterns`
+- `## Code Examples` (minimum 1 code block, recommend 3+)
+
+---
+
 ## How to Submit a Skill
 
 ### Step 1: Fork and Clone
@@ -59,14 +102,17 @@ Your skill MUST include a `SKILL.md` file. Use the [SKILL_TEMPLATE.md](SKILL_TEM
 
 Your skill must:
 
-- [ ] Have a clear, descriptive name (e.g., `react-native`, `electron`, `prisma`)
-- [ ] Include a `SKILL.md` with proper frontmatter
-- [ ] Define clear trigger conditions
-- [ ] Provide actionable patterns (not just documentation links)
-- [ ] Include at least 3 code examples
+- [ ] Have a clear, descriptive name (lowercase, hyphens: `react-native`, `electron`, `prisma`)
+- [ ] Include a `SKILL.md` with proper YAML frontmatter
+- [ ] Have `name` and `description` fields (description must include "Trigger:")
+- [ ] Define clear trigger conditions (when AI should use this skill)
+- [ ] Include a "When to Use" or "Trigger" section
+- [ ] Include a "Critical Patterns" or "Core Patterns" section
+- [ ] Include a "Code Examples" section with at least 3 code blocks
 - [ ] List anti-patterns to avoid
 - [ ] Be original (not a copy of existing skills)
 - [ ] Be tested with Claude Code or OpenCode
+- [ ] Use conventional commits for all commits
 
 ### Step 4: Submit Pull Request
 

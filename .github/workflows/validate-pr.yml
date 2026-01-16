@@ -1,0 +1,253 @@
+name: Validate PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited]
+
+jobs:
+  validate-commits:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const conventionalCommitRegex = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?: .{1,100}/;
+            
+            // Get commits in this PR
+            const commits = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            const invalidCommits = [];
+            
+            for (const commit of commits.data) {
+              const message = commit.commit.message.split('\n')[0]; // First line only
+              
+              // Skip merge commits
+              if (message.startsWith('Merge ')) continue;
+              
+              if (!conventionalCommitRegex.test(message)) {
+                invalidCommits.push({
+                  sha: commit.sha.substring(0, 7),
+                  message: message
+                });
+              }
+            }
+            
+            if (invalidCommits.length > 0) {
+              let errorMessage = '## ❌ Invalid Commit Messages\n\n';
+              errorMessage += 'The following commits do not follow [Conventional Commits](https://www.conventionalcommits.org/):\n\n';
+              errorMessage += '| Commit | Message |\n';
+              errorMessage += '|--------|--------|\n';
+              
+              for (const commit of invalidCommits) {
+                errorMessage += `| \`${commit.sha}\` | ${commit.message} |\n`;
+              }
+              
+              errorMessage += '\n### Expected Format\n\n';
+              errorMessage += '```\n';
+              errorMessage += '<type>(<scope>): <description>\n\n';
+              errorMessage += 'Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert\n';
+              errorMessage += '```\n\n';
+              errorMessage += '### Examples\n\n';
+              errorMessage += '- `feat(community): add react-native skill`\n';
+              errorMessage += '- `fix(curated): correct typo in typescript skill`\n';
+              errorMessage += '- `docs: update README installation steps`\n';
+              
+              core.setFailed(errorMessage);
+            } else {
+              console.log('✅ All commits follow conventional commits format');
+            }
+
+  validate-skill-format:
+    name: Validate Skill Format
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.title, '[Community Skill]') || contains(join(github.event.pull_request.labels.*.name, ','), 'community-skill')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find and validate SKILL.md files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { execSync } = require('child_process');
+            
+            // Get changed files in this PR
+            const changedFiles = execSync(
+              `git diff --name-only origin/main...HEAD -- 'community/**/SKILL.md'`,
+              { encoding: 'utf-8' }
+            ).trim().split('\n').filter(f => f);
+            
+            if (changedFiles.length === 0) {
+              console.log('No SKILL.md files changed in community/');
+              return;
+            }
+            
+            const errors = [];
+            const warnings = [];
+            
+            // Required frontmatter fields
+            const requiredFields = ['name', 'description'];
+            const recommendedFields = ['metadata'];
+            
+            // Required sections in the body
+            const requiredSections = [
+              { pattern: /^##\s+(When to Use|Trigger|Usage)/mi, name: 'When to Use / Trigger' },
+              { pattern: /^##\s+(Critical Patterns|Core Patterns|Patterns|Rules)/mi, name: 'Patterns / Rules' },
+              { pattern: /^##\s+(Code Examples?|Examples?)/mi, name: 'Code Examples' }
+            ];
+            
+            for (const file of changedFiles) {
+              console.log(`\nValidating: ${file}`);
+              
+              if (!fs.existsSync(file)) {
+                errors.push(`File not found: ${file}`);
+                continue;
+              }
+              
+              const content = fs.readFileSync(file, 'utf-8');
+              const lines = content.split('\n');
+              
+              // Check for YAML frontmatter
+              if (!content.startsWith('---')) {
+                errors.push(`${file}: Missing YAML frontmatter (must start with ---)`);
+                continue;
+              }
+              
+              // Extract frontmatter
+              const frontmatterEnd = content.indexOf('---', 3);
+              if (frontmatterEnd === -1) {
+                errors.push(`${file}: Invalid frontmatter (missing closing ---)`);
+                continue;
+              }
+              
+              const frontmatter = content.substring(3, frontmatterEnd).trim();
+              const body = content.substring(frontmatterEnd + 3).trim();
+              
+              // Validate required frontmatter fields
+              for (const field of requiredFields) {
+                const regex = new RegExp(`^${field}:`, 'm');
+                if (!regex.test(frontmatter)) {
+                  errors.push(`${file}: Missing required frontmatter field: \`${field}\``);
+                }
+              }
+              
+              // Check recommended fields
+              for (const field of recommendedFields) {
+                const regex = new RegExp(`^${field}:`, 'm');
+                if (!regex.test(frontmatter)) {
+                  warnings.push(`${file}: Consider adding frontmatter field: \`${field}\``);
+                }
+              }
+              
+              // Validate name format (lowercase, hyphens)
+              const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+              if (nameMatch) {
+                const name = nameMatch[1].trim();
+                if (!/^[a-z0-9-]+$/.test(name)) {
+                  errors.push(`${file}: Skill name must be lowercase with hyphens only. Got: \`${name}\``);
+                }
+              }
+              
+              // Validate description includes trigger
+              const descMatch = frontmatter.match(/description:\s*>?\s*([\s\S]*?)(?=\n[a-z]|$)/i);
+              if (descMatch) {
+                const desc = descMatch[1].toLowerCase();
+                if (!desc.includes('trigger')) {
+                  warnings.push(`${file}: Description should include "Trigger:" to help AI know when to use this skill`);
+                }
+              }
+              
+              // Validate required sections in body
+              for (const section of requiredSections) {
+                if (!section.pattern.test(body)) {
+                  errors.push(`${file}: Missing required section: \`${section.name}\``);
+                }
+              }
+              
+              // Check for at least one code block
+              const codeBlockCount = (body.match(/```/g) || []).length / 2;
+              if (codeBlockCount < 1) {
+                errors.push(`${file}: Must include at least one code example (no code blocks found)`);
+              } else if (codeBlockCount < 3) {
+                warnings.push(`${file}: Consider adding more code examples (found ${codeBlockCount}, recommend 3+)`);
+              }
+              
+              // Check minimum content length
+              if (body.length < 500) {
+                warnings.push(`${file}: Skill content seems short (${body.length} chars). Consider adding more detail.`);
+              }
+              
+              console.log(`  ✓ Frontmatter present`);
+              console.log(`  ✓ ${codeBlockCount} code blocks found`);
+            }
+            
+            // Output results
+            let output = '';
+            
+            if (errors.length > 0) {
+              output += '## ❌ Skill Validation Errors\n\n';
+              output += 'The following issues must be fixed:\n\n';
+              for (const error of errors) {
+                output += `- ${error}\n`;
+              }
+              output += '\n';
+            }
+            
+            if (warnings.length > 0) {
+              output += '## ⚠️ Suggestions\n\n';
+              output += 'Consider addressing these (not required):\n\n';
+              for (const warning of warnings) {
+                output += `- ${warning}\n`;
+              }
+              output += '\n';
+            }
+            
+            if (errors.length === 0 && warnings.length === 0) {
+              console.log('\n✅ All skill files are valid!');
+            }
+            
+            if (output) {
+              output += '### Expected SKILL.md Structure\n\n';
+              output += '```markdown\n';
+              output += '---\n';
+              output += 'name: my-skill-name\n';
+              output += 'description: >\n';
+              output += '  What this skill does.\n';
+              output += '  Trigger: When to use this skill.\n';
+              output += 'metadata:\n';
+              output += '  author: your-github-username\n';
+              output += '  version: "1.0"\n';
+              output += '---\n\n';
+              output += '## When to Use\n\n';
+              output += '- Bullet points...\n\n';
+              output += '## Critical Patterns\n\n';
+              output += '### Pattern 1\n\n';
+              output += '```typescript\n';
+              output += '// code example\n';
+              output += '```\n\n';
+              output += '## Code Examples\n\n';
+              output += '```typescript\n';
+              output += '// more examples\n';
+              output += '```\n';
+              output += '```\n';
+            }
+            
+            if (errors.length > 0) {
+              core.setFailed(output);
+            } else if (warnings.length > 0) {
+              core.warning(output);
+            }
