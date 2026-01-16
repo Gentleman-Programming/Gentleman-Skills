@@ -56,6 +56,56 @@ effect(() => localStorage.setItem('count', this.count().toString()));
 
 ---
 
+## NO Lifecycle Hooks (REQUIRED)
+
+Signals replace lifecycle hooks. Do NOT use `ngOnInit`, `ngOnChanges`, `ngOnDestroy`.
+
+```typescript
+// ❌ NEVER: Lifecycle hooks
+ngOnInit() {
+  this.loadUser();
+}
+
+ngOnChanges(changes: SimpleChanges) {
+  if (changes['userId']) {
+    this.loadUser();
+  }
+}
+
+// ✅ ALWAYS: Signals + effect
+readonly userId = input.required<string>();
+readonly user = signal<User | null>(null);
+
+private userEffect = effect(() => {
+  // Runs automatically when userId() changes
+  this.loadUser(this.userId());
+});
+
+// ✅ For derived data, use computed
+readonly displayName = computed(() => this.user()?.name ?? 'Guest');
+```
+
+### When to Use What
+
+| Need | Use |
+|------|-----|
+| React to input changes | `effect()` watching the input signal |
+| Derived/computed state | `computed()` |
+| Side effects (API calls, localStorage) | `effect()` |
+| Cleanup on destroy | `DestroyRef` + `inject()` |
+
+```typescript
+// Cleanup example
+private readonly destroyRef = inject(DestroyRef);
+
+constructor() {
+  const subscription = someObservable$.subscribe();
+  this.destroyRef.onDestroy(() => subscription.unsubscribe());
+}
+```
+
+---
+
 ## inject() Over Constructor (REQUIRED)
 
 ```typescript
@@ -85,6 +135,42 @@ constructor(private http: HttpClient) {}
   @case ('active') { <span>Active</span> }
   @default { <span>Unknown</span> }
 }
+```
+
+---
+
+## RxJS - Only When Needed
+
+Signals are the default. Use RxJS ONLY for complex async operations.
+
+| Use Signals | Use RxJS |
+|-------------|----------|
+| Component state | Combining multiple streams |
+| Derived values | Debounce/throttle |
+| Simple async (single API call) | Race conditions |
+| Input/Output | WebSockets, real-time |
+| | Complex error retry logic |
+
+```typescript
+// ✅ Simple API call - use signals
+readonly user = signal<User | null>(null);
+readonly loading = signal(false);
+
+async loadUser(id: string) {
+  this.loading.set(true);
+  this.user.set(await firstValueFrom(this.http.get<User>(`/api/users/${id}`)));
+  this.loading.set(false);
+}
+
+// ✅ Complex stream - use RxJS
+readonly searchResults$ = this.searchTerm$.pipe(
+  debounceTime(300),
+  distinctUntilChanged(),
+  switchMap(term => this.http.get<Results>(`/api/search?q=${term}`))
+);
+
+// Convert to signal when needed in template
+readonly searchResults = toSignal(this.searchResults$, { initialValue: [] });
 ```
 
 ---
