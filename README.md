@@ -29,6 +29,7 @@ These skills represent patterns and practices I've personally tested and refined
 
 | Skill | Description | Trigger |
 |-------|-------------|---------|
+| [angular](curated/angular) | Angular with signals, standalone components, Scope Rule | When working with Angular |
 | [react-19](curated/react-19) | React 19 patterns with React Compiler | When writing React components |
 | [nextjs-15](curated/nextjs-15) | Next.js 15 App Router patterns | When working with Next.js |
 | [typescript](curated/typescript) | TypeScript strict patterns | When writing TypeScript code |
