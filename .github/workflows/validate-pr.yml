@@ -77,19 +77,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Find and validate SKILL.md files
+      - name: Get changed files
+        id: changed-files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            const skillFiles = files
+              .filter(f => f.filename.startsWith('community/') && f.filename.endsWith('SKILL.md'))
+              .map(f => f.filename);
+            
+            console.log('Changed skill files:', skillFiles);
+            core.setOutput('files', JSON.stringify(skillFiles));
+
+      - name: Validate SKILL.md files
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
-            const { execSync } = require('child_process');
             
-            // Get changed files in this PR
-            const changedFiles = execSync(
-              `git diff --name-only origin/main...HEAD -- 'community/**/SKILL.md'`,
-              { encoding: 'utf-8' }
-            ).trim().split('\n').filter(f => f);
+            const changedFiles = JSON.parse('${{ steps.changed-files.outputs.files }}');
             
             if (changedFiles.length === 0) {
               console.log('No SKILL.md files changed in community/');
@@ -119,7 +132,6 @@ jobs:
               }
               
               const content = fs.readFileSync(file, 'utf-8');
-              const lines = content.split('\n');
               
               // Check for YAML frontmatter
               if (!content.startsWith('---')) {
