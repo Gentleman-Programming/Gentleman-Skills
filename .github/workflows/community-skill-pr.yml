@@ -1,0 +1,89 @@
+name: Community Skill PR Handler
+
+on:
+  pull_request:
+    types: [opened]
+    paths:
+      - 'community/**/SKILL.md'
+
+jobs:
+  setup-voting:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['community-skill', 'voting']
+            });
+
+      - name: Extract skill info
+        id: skill-info
+        run: |
+          # Find the SKILL.md file in this PR
+          SKILL_FILE=$(git diff --name-only origin/main...HEAD -- 'community/**/SKILL.md' | head -1)
+          
+          if [ -n "$SKILL_FILE" ]; then
+            SKILL_NAME=$(dirname "$SKILL_FILE" | xargs basename)
+            echo "skill_name=$SKILL_NAME" >> $GITHUB_OUTPUT
+            echo "skill_file=$SKILL_FILE" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post voting instructions
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const skillName = '${{ steps.skill-info.outputs.skill_name }}' || 'this skill';
+            const votingEndDate = new Date();
+            votingEndDate.setDate(votingEndDate.getDate() + 7);
+            const formattedDate = votingEndDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            });
+            
+            const body = `## 🗳️ Community Skill Voting
+
+            Thank you for submitting **${skillName}**! 
+
+            ### How to Vote
+
+            Community members, please vote using reactions on this PR:
+
+            | Vote | Reaction |
+            |------|----------|
+            | ✅ **Approve** | 👍 👏 🎉 🚀 ❤️ (any positive) |
+            | ❌ **Reject** | 👎 |
+
+            ### Voting Period
+
+            **Ends: ${formattedDate}** (7 days from now)
+
+            ### Acceptance Criteria
+
+            - Minimum 3 total votes required
+            - More positive votes than negative votes
+            - Skill follows the [contribution guidelines](../blob/main/CONTRIBUTING.md)
+
+            ---
+
+            *This comment was automatically generated. Maintainers may fast-track exceptional contributions.*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: body
+            });
