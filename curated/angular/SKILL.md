@@ -157,9 +157,9 @@ user.ts             # Not user.model.ts
 
 ---
 
-## OnPush Change Detection (REQUIRED)
+## OnPush + Zoneless (REQUIRED)
 
-ALWAYS use `OnPush` - aligns with signals and future Zoneless Angular.
+Angular is Zoneless and signal-based. Components are stateless - state lives in signals.
 
 ```typescript
 @Component({
