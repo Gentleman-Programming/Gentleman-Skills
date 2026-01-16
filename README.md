@@ -4,11 +4,17 @@
 
 Skills are specialized instruction sets that teach AI assistants how to work with specific frameworks, libraries, and patterns. They provide on-demand context so the AI writes code following best practices and conventions.
 
+## Official Vercel Skills
+
+For official/recommended skills maintained by Vercel, check out:
+
+**[vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills)** - Official Vercel AI agent skills for Next.js, React, AI SDK, and more.
+
 ## Philosophy
 
-This repository is divided into two sections:
+This repository builds on top of those foundations with **my specific architecture and patterns**:
 
-- **Curated Skills** - Personally crafted and battle-tested by [@Gentleman-Programming](https://github.com/Gentleman-Programming). These reflect a specific way of thinking about code architecture, patterns, and best practices.
+- **Curated Skills** - Personally crafted and battle-tested by [@Gentleman-Programming](https://github.com/Gentleman-Programming). These reflect MY way of thinking about code architecture - Scope Rule, file naming conventions, signals-first approach, and more. They extend or override official recommendations where I have a different opinion.
 
 - **Community Skills** - Created by the community, for the community. These go through a democratic voting process before being accepted.
 
