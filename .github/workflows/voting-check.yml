@@ -1,0 +1,198 @@
+name: Check Voting Results
+
+on:
+  schedule:
+    # Run every day at 12:00 UTC
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  check-votes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check and process voting PRs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const VOTING_PERIOD_DAYS = 7;
+            const MIN_VOTES = 3;
+            
+            // Get all open PRs with 'voting' label
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            
+            for (const pr of prs) {
+              // Check if PR has 'voting' label
+              const hasVotingLabel = pr.labels.some(l => l.name === 'voting');
+              if (!hasVotingLabel) continue;
+              
+              // Check if voting period has ended (7 days since PR creation)
+              const createdAt = new Date(pr.created_at);
+              const now = new Date();
+              const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
+              
+              if (daysSinceCreation < VOTING_PERIOD_DAYS) {
+                console.log(`PR #${pr.number}: Voting still open (${Math.ceil(VOTING_PERIOD_DAYS - daysSinceCreation)} days left)`);
+                continue;
+              }
+              
+              console.log(`PR #${pr.number}: Voting period ended, counting votes...`);
+              
+              // Get reactions on the PR
+              const { data: reactions } = await github.rest.reactions.listForIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                per_page: 100
+              });
+              
+              // Count votes
+              const positiveReactions = ['+1', 'laugh', 'hooray', 'heart', 'rocket', 'eyes'];
+              const negativeReactions = ['-1'];
+              
+              let positiveVotes = 0;
+              let negativeVotes = 0;
+              const voters = new Set();
+              
+              for (const reaction of reactions) {
+                // Count each user only once (their most recent vote)
+                if (voters.has(reaction.user.login)) continue;
+                voters.add(reaction.user.login);
+                
+                if (positiveReactions.includes(reaction.content)) {
+                  positiveVotes++;
+                } else if (negativeReactions.includes(reaction.content)) {
+                  negativeVotes++;
+                }
+              }
+              
+              const totalVotes = positiveVotes + negativeVotes;
+              console.log(`PR #${pr.number}: +${positiveVotes} / -${negativeVotes} (${totalVotes} total)`);
+              
+              // Check if minimum votes reached
+              if (totalVotes < MIN_VOTES) {
+                // Not enough votes - extend or close
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `## ⏰ Voting Period Ended\n\nUnfortunately, this PR did not receive the minimum required votes (${MIN_VOTES}).\n\n**Results:** +${positiveVotes} / -${negativeVotes} (${totalVotes} total votes)\n\nThe PR will remain open for another week. Please help spread the word!\n\n*If no votes are received in the extended period, this PR may be closed.*`
+                });
+                
+                // Remove voting label, add needs-votes
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'voting'
+                }).catch(() => {});
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['needs-votes']
+                });
+                
+                continue;
+              }
+              
+              // Determine outcome
+              const approved = positiveVotes > negativeVotes;
+              
+              if (approved) {
+                // APPROVED - Merge the PR
+                console.log(`PR #${pr.number}: APPROVED! Merging...`);
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `## ✅ Community Skill Approved!\n\n**Final Results:** +${positiveVotes} / -${negativeVotes}\n\nThe community has spoken! This skill has been approved and will be merged.\n\nThank you to everyone who voted and to the contributor for this addition! 🎉`
+                });
+                
+                // Remove voting label, add approved
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'voting'
+                }).catch(() => {});
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['approved']
+                });
+                
+                // Merge the PR
+                try {
+                  await github.rest.pulls.merge({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pull_number: pr.number,
+                    merge_method: 'squash',
+                    commit_title: `feat(community): add ${pr.title.replace('[Community Skill] ', '')} skill`,
+                    commit_message: `Approved by community vote: +${positiveVotes} / -${negativeVotes}`
+                  });
+                  console.log(`PR #${pr.number}: Merged successfully!`);
+                } catch (mergeError) {
+                  console.log(`PR #${pr.number}: Could not auto-merge: ${mergeError.message}`);
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: pr.number,
+                    body: `⚠️ Auto-merge failed. A maintainer will merge this manually.\n\nError: ${mergeError.message}`
+                  });
+                }
+                
+              } else {
+                // REJECTED - Close the PR
+                console.log(`PR #${pr.number}: REJECTED. Closing...`);
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `## ❌ Community Skill Not Approved\n\n**Final Results:** +${positiveVotes} / -${negativeVotes}\n\nUnfortunately, this skill did not receive enough positive votes from the community.\n\nThank you for your contribution! You're welcome to:\n- Address the feedback and submit again\n- Open a discussion to understand what could be improved\n\nDon't give up! 💪`
+                });
+                
+                // Remove voting label, add rejected
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  name: 'voting'
+                }).catch(() => {});
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['rejected']
+                });
+                
+                // Close the PR
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+              }
+            }
+            
+            console.log('Voting check complete!');
