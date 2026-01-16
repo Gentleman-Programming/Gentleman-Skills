@@ -1,13 +1,20 @@
 # Angular References
 
-## Signals (for state management patterns)
+## Signals
 https://angular.dev/guide/signals
 
-## Control Flow (for @if, @for, @switch syntax)
+## Control Flow (@if, @for, @switch)
 https://angular.dev/guide/templates/control-flow
 
-## Component Inputs (for input() function)
+## Component Inputs
 https://angular.dev/guide/components/inputs
 
-## AI Guidelines (official Angular AI coding rules)
+## SSR & Hydration
+https://angular.dev/guide/ssr
+https://angular.dev/guide/hydration
+
+## Deferrable Views (@defer)
+https://angular.dev/guide/defer
+
+## AI Coding Guidelines
 https://angular.dev/ai/develop-with-ai

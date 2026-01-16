@@ -157,6 +157,82 @@ user.ts             # Not user.model.ts
 
 ---
 
+## OnPush Change Detection (REQUIRED)
+
+ALWAYS use `OnPush` - aligns with signals and future Zoneless Angular.
+
+```typescript
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+```
+
+---
+
+## SSR vs CSR - When to Use
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| SEO critical (blog, e-commerce) | SSR | Search engines see content |
+| Dynamic content, personalized | SSR | Fresh data per request |
+| Dashboard, admin panel | CSR | No SEO needed, faster dev |
+| Static marketing site | SSG/Prerender | Best performance |
+
+```typescript
+// Enable SSR + Hydration
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideClientHydration()
+  ]
+});
+```
+
+---
+
+## @defer - Lazy Load Components
+
+Use `@defer` for below-the-fold content or heavy components.
+
+| Trigger | When to Use |
+|---------|-------------|
+| `on viewport` | Content not immediately visible |
+| `on interaction` | Load on click/focus/hover |
+| `on idle` | Load when browser is idle |
+| `on timer(ms)` | Load after delay |
+| `when condition` | Load when expression is true |
+
+```html
+@defer (on viewport) {
+  <heavy-component />
+} @placeholder {
+  <p>Placeholder content</p>
+} @loading (minimum 200ms) {
+  <spinner />
+} @error {
+  <p>Failed to load</p>
+}
+```
+
+---
+
+## Lazy Loading Routes
+
+```typescript
+// Single component
+{
+  path: 'admin',
+  loadComponent: () => import('./features/admin/admin').then(c => c.AdminComponent)
+}
+
+// Feature with child routes
+{
+  path: 'users',
+  loadChildren: () => import('./features/users/routes').then(m => m.USERS_ROUTES)
+}
+```
+
+---
+
 ## Commands
 
 ```bash
