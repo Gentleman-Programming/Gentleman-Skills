@@ -6,7 +6,7 @@ Skills are specialized instruction sets that teach AI assistants how to work wit
 
 ## Philosophy
 
-- **Curated Skills** - Personally crafted and battle-tested by [@Gentleman-Programming](https://github.com/Gentleman-Programming). These reflect MY way of thinking about code architecture - Scope Rule, file naming conventions, signals-first approach, and more.
+- **Curated Skills** - Personally crafted and battle-tested by [@Gentleman-Programming](https://github.com/Gentleman-Programming). These reflect MY way of thinking about code architecture - Scope Rule, file naming conventions, signals-first approach, and more. Some skills (like testing and workflow) have been developed in collaboration with the team at [Prowler](https://github.com/prowler-cloud).
 
 - **Community Skills** - Created by the community, for the community. These go through a democratic voting process before being accepted.
 
