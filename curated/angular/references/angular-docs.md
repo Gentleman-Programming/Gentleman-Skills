@@ -3,18 +3,26 @@
 ## Signals
 https://angular.dev/guide/signals
 
-## Control Flow (@if, @for, @switch)
+## Control Flow
 https://angular.dev/guide/templates/control-flow
 
-## Component Inputs
-https://angular.dev/guide/components/inputs
+## Zoneless
+https://angular.dev/guide/zoneless
 
-## SSR & Hydration
-https://angular.dev/guide/ssr
-https://angular.dev/guide/hydration
+## Signal Forms (experimental)
+https://angular.dev/guide/forms/signals/overview
 
-## Deferrable Views (@defer)
+## NgOptimizedImage
+https://angular.dev/guide/image-optimization
+
+## Performance
+https://angular.dev/best-practices/runtime-performance
+
+## @defer
 https://angular.dev/guide/defer
 
-## AI Coding Guidelines
+## Style Guide
+https://angular.dev/style-guide
+
+## AI Guidelines
 https://angular.dev/ai/develop-with-ai

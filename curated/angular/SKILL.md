@@ -1,7 +1,7 @@
 ---
 name: angular
 description: >
-  Angular patterns with signals, standalone components, and Scope Rule architecture.
+  Angular patterns with signals, standalone components, zoneless, and Scope Rule architecture.
   Trigger: When working with Angular components, services, signals, or project structure.
 metadata:
   author: gentleman-programming
@@ -43,7 +43,6 @@ readonly checked = model(false);  // Two-way binding
 ## Signals for State (REQUIRED)
 
 ```typescript
-// ✅ ALWAYS: Signals
 readonly count = signal(0);
 readonly doubled = computed(() => this.count() * 2);
 
@@ -53,9 +52,6 @@ this.count.update(prev => prev + 1);
 
 // Side effects
 effect(() => localStorage.setItem('count', this.count().toString()));
-
-// ❌ NEVER: Plain properties for reactive state
-count = 0;
 ```
 
 ---
@@ -65,7 +61,6 @@ count = 0;
 ```typescript
 // ✅ ALWAYS
 private readonly http = inject(HttpClient);
-private readonly router = inject(Router);
 
 // ❌ NEVER
 constructor(private http: HttpClient) {}
@@ -76,7 +71,6 @@ constructor(private http: HttpClient) {}
 ## Native Control Flow (REQUIRED)
 
 ```typescript
-// ✅ ALWAYS: @if, @for, @switch
 @if (loading()) {
   <spinner />
 } @else {
@@ -86,29 +80,109 @@ constructor(private http: HttpClient) {}
     <p>No items</p>
   }
 }
-
-// ❌ NEVER: Structural directives
-*ngIf="loading"
-*ngFor="let item of items"
 ```
 
 ---
 
-## Host Bindings in Decorator (REQUIRED)
+## Zoneless Angular (REQUIRED)
+
+Angular is zoneless. Use `provideZonelessChangeDetection()` and remove ZoneJS.
 
 ```typescript
-// ✅ ALWAYS: host object
-@Component({
-  host: {
-    '[class.active]': 'isActive()',
-    '(click)': 'onClick($event)'
-  }
-})
-
-// ❌ NEVER: Decorators
-@HostBinding('class.active') isActive = true;
-@HostListener('click') onClick() {}
+bootstrapApplication(AppComponent, {
+  providers: [provideZonelessChangeDetection()]
+});
 ```
+
+Remove from `angular.json` polyfills and uninstall:
+```bash
+npm uninstall zone.js
+```
+
+### Zoneless Requirements
+- Use `OnPush` change detection
+- Use signals for state (auto-notifies Angular)
+- Use `AsyncPipe` for observables
+- Use `markForCheck()` when needed
+
+---
+
+## Forms - Signal Forms vs Reactive
+
+| Use Case | Recommendation |
+|----------|----------------|
+| New apps with signals | Signal Forms (experimental) |
+| Production apps | Reactive Forms |
+| Simple forms | Template-driven |
+
+### Signal Forms (v21+, experimental)
+
+```typescript
+import { form, FormField, required } from '@angular/forms/signals';
+
+@Component({
+  imports: [FormField],
+  template: `<input [formField]="emailField" />`
+})
+export class LoginComponent {
+  readonly loginForm = form({
+    email: ['', required],
+    password: ['', required]
+  });
+  
+  readonly emailField = this.loginForm.controls.email;
+}
+```
+
+### Reactive Forms (production)
+
+```typescript
+private readonly fb = inject(FormBuilder);
+
+form = this.fb.nonNullable.group({
+  email: ['', [Validators.required, Validators.email]],
+  password: ['', Validators.required],
+});
+```
+
+---
+
+## Performance
+
+### NgOptimizedImage (REQUIRED for images)
+
+```typescript
+import { NgOptimizedImage } from '@angular/common';
+
+@Component({
+  imports: [NgOptimizedImage],
+  template: `
+    <!-- LCP image: add priority -->
+    <img ngSrc="hero.jpg" width="800" height="400" priority>
+    
+    <!-- Regular: lazy loaded by default -->
+    <img ngSrc="thumb.jpg" width="200" height="200">
+    
+    <!-- Fill mode (parent needs position: relative) -->
+    <img ngSrc="bg.jpg" fill>
+  `
+})
+```
+
+**Rules:**
+- ALWAYS set `width` and `height` (or `fill`)
+- Add `priority` to LCP image
+- Use `ngSrc` not `src`
+
+### Slow Computations
+
+| Solution | When |
+|----------|------|
+| Optimize algorithm | First choice always |
+| Pure pipes | Cache single result |
+| Memoization | Cache multiple results |
+
+**NEVER** trigger reflows in lifecycle hooks.
 
 ---
 
@@ -129,13 +203,13 @@ constructor(private http: HttpClient) {}
 src/app/
   features/
     [feature-name]/
-      [feature-name].ts       # Main component
-      components/             # Feature-specific
-      services/
-    shared/                   # ONLY for 2+ feature usage
+      [feature-name].ts
       components/
       services/
-  core/                       # Singletons
+    shared/
+      components/
+      services/
+  core/
     services/
     guards/
   app.ts
@@ -152,34 +226,28 @@ No `.component`, `.service` suffixes:
 ```
 user-profile.ts     # Not user-profile.component.ts
 cart.ts             # Not cart.service.ts
-user.ts             # Not user.model.ts
 ```
 
 ---
 
-## OnPush + Zoneless (REQUIRED)
+## Style Guide
 
-Angular is Zoneless and signal-based. Components are stateless - state lives in signals.
+### From Official Docs (that we follow)
+- `inject()` over constructor injection
+- `class` and `style` bindings over `ngClass`/`ngStyle`
+- `protected` for template-only members
+- `readonly` for inputs, outputs, queries
+- Name handlers for action (`saveUser`) not event (`handleClick`)
+- Keep lifecycle hooks simple - delegate to well-named methods
 
-```typescript
-@Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-```
+### We Override
+- File naming: NO suffixes (official says `.component.ts`)
 
 ---
 
-## SSR vs CSR - When to Use
-
-| Scenario | Use | Why |
-|----------|-----|-----|
-| SEO critical (blog, e-commerce) | SSR | Search engines see content |
-| Dynamic content, personalized | SSR | Fresh data per request |
-| Dashboard, admin panel | CSR | No SEO needed, faster dev |
-| Static marketing site | SSG/Prerender | Best performance |
+## SSR & Hydration
 
 ```typescript
-// Enable SSR + Hydration
 bootstrapApplication(AppComponent, {
   providers: [
     provideClientHydration()
@@ -187,44 +255,46 @@ bootstrapApplication(AppComponent, {
 });
 ```
 
+| Scenario | Use |
+|----------|-----|
+| SEO critical | SSR |
+| Dashboard/Admin | CSR |
+| Static site | SSG/Prerender |
+
 ---
 
-## @defer - Lazy Load Components
-
-Use `@defer` for below-the-fold content or heavy components.
-
-| Trigger | When to Use |
-|---------|-------------|
-| `on viewport` | Content not immediately visible |
-| `on interaction` | Load on click/focus/hover |
-| `on idle` | Load when browser is idle |
-| `on timer(ms)` | Load after delay |
-| `when condition` | Load when expression is true |
+## @defer - Lazy Components
 
 ```html
 @defer (on viewport) {
   <heavy-component />
 } @placeholder {
-  <p>Placeholder content</p>
+  <p>Placeholder</p>
 } @loading (minimum 200ms) {
   <spinner />
 } @error {
-  <p>Failed to load</p>
+  <p>Failed</p>
 }
 ```
 
+| Trigger | When |
+|---------|------|
+| `on viewport` | Below the fold |
+| `on interaction` | On click/focus |
+| `on idle` | Browser idle |
+| `on timer(ms)` | After delay |
+| `when condition` | Expression true |
+
 ---
 
-## Lazy Loading Routes
+## Lazy Routes
 
 ```typescript
-// Single component
 {
   path: 'admin',
   loadComponent: () => import('./features/admin/admin').then(c => c.AdminComponent)
 }
 
-// Feature with child routes
 {
   path: 'users',
   loadChildren: () => import('./features/users/routes').then(m => m.USERS_ROUTES)
