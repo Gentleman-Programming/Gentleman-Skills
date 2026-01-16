@@ -16,6 +16,17 @@ This repository is divided into two sections:
 
 These skills represent patterns and practices I've personally tested and refined over years of development.
 
+### Contributing to this Repo?
+
+> **Start here!** Use the [github-pr](curated/github-pr) skill to create proper PRs with conventional commits.
+
+| Skill | Description | Trigger |
+|-------|-------------|---------|
+| [github-pr](curated/github-pr) | Create quality PRs with conventional commits | When creating PRs or contributing |
+| [skill-creator](curated/skill-creator) | Create new skills | When creating new AI agent skills |
+
+### Frontend
+
 | Skill | Description | Trigger |
 |-------|-------------|---------|
 | [react-19](curated/react-19) | React 19 patterns with React Compiler | When writing React components |
@@ -24,13 +35,27 @@ These skills represent patterns and practices I've personally tested and refined
 | [tailwind-4](curated/tailwind-4) | Tailwind CSS 4 patterns | When styling with Tailwind |
 | [zod-4](curated/zod-4) | Zod 4 schema validation | When using Zod for validation |
 | [zustand-5](curated/zustand-5) | Zustand 5 state management | When managing React state |
+
+### Backend & AI
+
+| Skill | Description | Trigger |
+|-------|-------------|---------|
 | [ai-sdk-5](curated/ai-sdk-5) | Vercel AI SDK 5 patterns | When building AI chat features |
 | [django-drf](curated/django-drf) | Django REST Framework patterns | When building REST APIs with Django |
+
+### Testing
+
+| Skill | Description | Trigger |
+|-------|-------------|---------|
 | [playwright](curated/playwright) | Playwright E2E testing | When writing E2E tests |
 | [pytest](curated/pytest) | Python pytest patterns | When writing Python tests |
+
+### Workflow
+
+| Skill | Description | Trigger |
+|-------|-------------|---------|
 | [jira-task](curated/jira-task) | Jira task creation | When creating Jira tasks |
 | [jira-epic](curated/jira-epic) | Jira epic creation | When creating Jira epics |
-| [skill-creator](curated/skill-creator) | Create new skills | When creating new AI agent skills |
 
 ## Community Skills
 
@@ -91,11 +116,13 @@ When the AI detects a matching context (e.g., editing a React component), it rea
 
 We welcome community contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
 
+> **Pro tip**: Load the [github-pr](curated/github-pr) skill to create PRs that follow our conventions!
+
 ### Quick Overview
 
 1. **Fork** this repository
 2. **Create** your skill following the [skill template](SKILL_TEMPLATE.md)
-3. **Submit** a Pull Request to the `community/` folder
+3. **Submit** a Pull Request to the `community/` folder using [conventional commits](https://www.conventionalcommits.org/)
 4. **Community votes** for 7 days using reactions
 5. **Accepted** if more positive than negative votes
 
