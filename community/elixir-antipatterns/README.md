@@ -9,12 +9,9 @@ This skill uses a **hybrid approach** to balance LLM context limits with compreh
 ```
 elixir-antipatterns/
 ├── SKILL.md          # Core 8 patterns (322 lines as of v1.0)
-├── EXTENDED.md       # Complete 40+ patterns (706 lines)
-├── examples/         # Executable Elixir code samples
-│   ├── error-handling.ex
-│   ├── liveview-separation.ex
-│   └── n-plus-one-fix.ex
-└── README.md         # This file
+├── README.md         # This file
+├── assets/         
+│   ├── extended.md   # Complete 40+ patterns (706 lines)
 ```
 
 ### SKILL.md (Core - LLM Loaded)
@@ -34,8 +31,7 @@ Contains the top 8 most critical anti-patterns:
 - SKILL.md fits within LLM context windows 
 - Aligns with Gentleman-Skills standard (150-388 line target)
 - Includes ASCII diagram for Phoenix architecture visualization
-- EXTENDED.md preserves all knowledge with advanced Ecto patterns
-- examples/ provides copy-paste ready code
+- extended.md preserves all knowledge with advanced Ecto patterns
 
 ## What This Skill Covers
 
@@ -49,7 +45,7 @@ Contains the top 8 most critical anti-patterns:
 - **Comprehensive Elixir/Phoenix skill**: Covers error handling, contexts, Ecto, testing
 - **Code review optimized**: Trigger designed for PR reviews and refactoring
 - **Visual aids**: ASCII diagrams for Phoenix Context Separation architecture
-- **Advanced techniques**: EXTENDED.md documents 3 Ecto preload strategies
+- **Advanced techniques**: extended.md documents 3 Ecto preload strategies
 
 ## Usage with AI Assistants
 
@@ -58,7 +54,7 @@ The AI will automatically load `SKILL.md` when working with Elixir code. For dee
 ```markdown
 ## Skills
 When working with Elixir/Phoenix code, load the `elixir-antipatterns` skill.
-For comprehensive patterns, reference `EXTENDED.md`.
+For comprehensive patterns, reference `extended.md`.
 ```
 
 ## Testing
