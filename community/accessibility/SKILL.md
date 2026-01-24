@@ -21,7 +21,9 @@ metadata:
 
 ---
 
-## Semantic HTML (REQUIRED)
+## Critical Patterns
+
+### Semantic HTML
 
 ```tsx
 // ✅ ALWAYS: Use semantic HTML elements
@@ -53,7 +55,7 @@ metadata:
 
 ---
 
-## Keyboard Navigation (REQUIRED)
+### Keyboard Navigation
 
 ```tsx
 // ✅ ALWAYS: Use native buttons
@@ -84,7 +86,7 @@ metadata:
 
 ---
 
-## Form Labels (REQUIRED)
+### Form Labels
 
 ```tsx
 // ✅ ALWAYS: Explicit labels
@@ -108,7 +110,7 @@ metadata:
 
 ---
 
-## ARIA When Needed
+### ARIA Attributes
 
 ```tsx
 // ✅ Icon buttons need aria-label
@@ -155,7 +157,7 @@ metadata:
 
 ---
 
-## Focus Management (REQUIRED)
+### Focus Management
 
 ```tsx
 // ✅ Modal focus trap
@@ -210,7 +212,7 @@ button:focus {
 
 ---
 
-## Color Contrast (REQUIRED)
+### Color Contrast
 
 **WCAG 2.2 AA Requirements:**
 - Normal text: **4.5:1** contrast ratio
@@ -235,7 +237,7 @@ button:focus {
 
 ---
 
-## Image Alt Text
+### Image Alt Text
 
 ```tsx
 // ✅ Descriptive alt text
@@ -259,7 +261,7 @@ button:focus {
 
 ---
 
-## Heading Hierarchy
+### Heading Hierarchy
 
 ```tsx
 // ✅ Logical heading order
@@ -278,7 +280,7 @@ button:focus {
 
 ---
 
-## Skip Links
+### Skip Links
 
 ```tsx
 // ✅ Allow keyboard users to skip navigation
@@ -314,7 +316,7 @@ button:focus {
 
 ---
 
-## Screen Reader Announcements
+### Screen Reader Announcements
 
 ```typescript
 // ✅ Announce dynamic actions
@@ -357,6 +359,82 @@ function AddToCart({ product }) {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+```
+
+---
+
+## Code Examples
+
+### Accessible Modal Component
+
+```tsx
+function AccessibleModal({ isOpen, onClose, title, children }) {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocus.current = document.activeElement as HTMLElement;
+      modalRef.current?.focus();
+    } else {
+      previousFocus.current?.focus();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+      tabIndex={-1}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
+      <h2 id="modal-title">{title}</h2>
+      {children}
+      <button onClick={onClose} aria-label="Close modal">×</button>
+    </div>
+  );
+}
+```
+
+### Accessible Form with Validation
+
+```tsx
+function AccessibleForm() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    // Submit form
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="email">Email *</label>
+      <input
+        id="email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        aria-required="true"
+        aria-invalid={!!error}
+        aria-describedby={error ? 'email-error' : undefined}
+      />
+      {error && (
+        <div id="email-error" role="alert">{error}</div>
+      )}
+      <button type="submit">Submit</button>
+    </form>
+  );
 }
 ```
 
