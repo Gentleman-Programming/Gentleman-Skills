@@ -22,9 +22,10 @@ jobs:
             
             // Allowed file patterns for community contributions
             const allowedPatterns = [
-              /^community\/[^/]+\/SKILL\.md$/,           // community/skill-name/SKILL.md (required)
-              /^community\/[^/]+\/README\.md$/,          // community/skill-name/README.md (optional)
-              /^community\/[^/]+\/assets\/[^/]+\.(png|jpg|jpeg|gif|svg|webp|md)$/i,  // assets: images + markdown docs
+              /^community\/[^/]+\/SKILL\.md$/,              // community/skill-name/SKILL.md (required)
+              /^community\/[^/]+\/README\.md$/,             // community/skill-name/README.md (optional)
+              /^community\/[^/]+\/assets\/[^/]+\.(png|jpg|jpeg|gif|svg|webp|md)$/i,     // assets/: images + .md
+              /^community\/[^/]+\/references\/[^/]+\.(png|jpg|jpeg|gif|svg|webp|md)$/i, // references/: images + .md
             ];
             
             // Forbidden patterns (executable/dangerous files)
@@ -80,7 +81,8 @@ jobs:
               error += '\n### Allowed Files for Community Skills\n\n';
               error += '- `community/<skill-name>/SKILL.md` (required)\n';
               error += '- `community/<skill-name>/README.md` (optional)\n';
-              error += '- `community/<skill-name>/assets/*` (images + extra .md docs)\n';
+              error += '- `community/<skill-name>/assets/*` (images + .md files)\n';
+              error += '- `community/<skill-name>/references/*` (images + .md files)\n';
               error += '\n### Not Allowed\n\n';
               error += '- **Executable code files** (`.js`, `.ts`, `.py`, `.ex`, `.go`, etc.)\n';
               error += '- Config files (`.yml`, `.json`, etc.)\n';
