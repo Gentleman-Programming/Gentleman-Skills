@@ -3,10 +3,22 @@ name: accessibility
 description: >
   Web accessibility (a11y) patterns and WCAG 2.2 compliance.
   Trigger: When building accessible components, when adding ARIA attributes, when ensuring WCAG compliance.
-license: Apache-2.0
 metadata:
   author: dsantiagomj
   version: "1.0"
+---
+
+## When to Use
+
+- Building UI components that need keyboard navigation
+- Adding ARIA attributes to interactive elements
+- Ensuring WCAG 2.2 AA compliance
+- Creating accessible forms with proper labels
+- Implementing focus management in modals/dialogs
+- Testing accessibility with screen readers
+- Checking color contrast and visual requirements
+- Writing alt text for images
+
 ---
 
 ## Semantic HTML (REQUIRED)
