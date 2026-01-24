@@ -2,14 +2,12 @@
 
 name: jest
 description: >
-Jest testing patterns and best practices for modern TypeScript/JavaScript projects.
-Trigger: Writing, refactoring, or reviewing Jest unit/integration tests (matchers, async, mocks, timers, snapshots, setup/teardown).
-license: Apache-2.0
-metadata:
-author: gentleman-programming
-version: "1.0"
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash, WebFetch, WebSearch, Task
------------------------------------------------------------------------------
+  Jest testing patterns and best practices for modern TypeScript/JavaScript projects.
+  Trigger: Writing, refactoring, or reviewing Jest unit/integration tests (matchers, async, mocks, timers, snapshots, setup/teardown).
+metadata: 
+  author: Mane087
+  version: "1.0"
+---
 
 ## When to Use
 
