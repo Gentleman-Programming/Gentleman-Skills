@@ -2,7 +2,7 @@ name: Community Skill PR Handler
 
 on:
   pull_request_target:
-    types: [opened]
+    types: [opened, reopened]
     paths:
       - 'community/**/SKILL.md'
 
