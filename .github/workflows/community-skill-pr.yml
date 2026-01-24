@@ -1,7 +1,7 @@
 name: Community Skill PR Handler
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened]
     paths:
       - 'community/**/SKILL.md'
@@ -14,8 +14,10 @@ jobs:
       issues: write
     
     steps:
-      - name: Checkout repository
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Add labels
         uses: actions/github-script@v7
@@ -30,15 +32,27 @@ jobs:
 
       - name: Extract skill info
         id: skill-info
-        run: |
-          # Find the SKILL.md file in this PR
-          SKILL_FILE=$(git diff --name-only origin/main...HEAD -- 'community/**/SKILL.md' | head -1)
-          
-          if [ -n "$SKILL_FILE" ]; then
-            SKILL_NAME=$(dirname "$SKILL_FILE" | xargs basename)
-            echo "skill_name=$SKILL_NAME" >> $GITHUB_OUTPUT
-            echo "skill_file=$SKILL_FILE" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            const skillFile = files.find(f => 
+              f.filename.startsWith('community/') && f.filename.endsWith('SKILL.md')
+            );
+            
+            if (skillFile) {
+              const parts = skillFile.filename.split('/');
+              const skillName = parts[parts.length - 2]; // folder name before SKILL.md
+              core.setOutput('skill_name', skillName);
+              core.setOutput('skill_file', skillFile.filename);
+              console.log(`Found skill: ${skillName} at ${skillFile.filename}`);
+            }
 
       - name: Post voting instructions
         uses: actions/github-script@v7

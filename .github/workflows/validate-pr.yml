@@ -1,15 +1,103 @@
 name: Validate PR
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, edited]
 
 jobs:
-  validate-commits:
-    name: Validate Conventional Commits
+  security-check:
+    name: Security - Validate Allowed Files
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Check for forbidden files
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100
+            });
+            
+            // Allowed file patterns for community contributions
+            const allowedPatterns = [
+              /^community\/[^/]+\/SKILL\.md$/,           // community/skill-name/SKILL.md
+              /^community\/[^/]+\/assets\/[^/]+\.(png|jpg|jpeg|gif|svg|webp)$/i,  // images in assets
+              /^community\/[^/]+\/README\.md$/,          // optional README
+            ];
+            
+            // Forbidden patterns (executable/dangerous files)
+            const forbiddenPatterns = [
+              /\.(sh|bash|zsh|fish|ps1|bat|cmd|exe|bin|run)$/i,  // scripts
+              /\.(js|ts|mjs|cjs|jsx|tsx)$/i,                      // javascript/typescript
+              /\.(py|pyc|pyo|pyw)$/i,                              // python
+              /\.(rb|rake)$/i,                                     // ruby
+              /\.(go|rs|c|cpp|h|hpp)$/i,                          // compiled languages
+              /\.(php|pl|pm)$/i,                                   // php/perl
+              /\.(yml|yaml)$/i,                                    // workflow files
+              /\.(json|toml|ini|cfg)$/i,                          // config files
+              /^\.github\//,                                       // anything in .github
+              /^curated\//,                                        // curated folder (maintainers only)
+              /Makefile$/i,
+              /Dockerfile$/i,
+              /docker-compose/i,
+            ];
+            
+            const forbidden = [];
+            const notAllowed = [];
+            
+            for (const file of files) {
+              const filename = file.filename;
+              
+              // Check if it's explicitly forbidden
+              for (const pattern of forbiddenPatterns) {
+                if (pattern.test(filename)) {
+                  forbidden.push({ file: filename, reason: 'Forbidden file type' });
+                  break;
+                }
+              }
+              
+              // Check if it matches allowed patterns
+              const isAllowed = allowedPatterns.some(pattern => pattern.test(filename));
+              if (!isAllowed && !forbidden.find(f => f.file === filename)) {
+                notAllowed.push({ file: filename, reason: 'Not in allowed paths' });
+              }
+            }
+            
+            const allIssues = [...forbidden, ...notAllowed];
+            
+            if (allIssues.length > 0) {
+              let error = '## 🚨 Security Check Failed\n\n';
+              error += 'This PR contains files that are not allowed in community contributions:\n\n';
+              error += '| File | Reason |\n';
+              error += '|------|--------|\n';
+              
+              for (const issue of allIssues) {
+                error += `| \`${issue.file}\` | ${issue.reason} |\n`;
+              }
+              
+              error += '\n### Allowed Files for Community Skills\n\n';
+              error += '- `community/<skill-name>/SKILL.md` (required)\n';
+              error += '- `community/<skill-name>/assets/*.{png,jpg,gif,svg,webp}` (optional images)\n';
+              error += '- `community/<skill-name>/README.md` (optional)\n';
+              error += '\n### Not Allowed\n\n';
+              error += '- Scripts (`.sh`, `.js`, `.py`, etc.)\n';
+              error += '- Config files (`.yml`, `.json`, etc.)\n';
+              error += '- Anything in `.github/` or `curated/`\n';
+              error += '\n*If you believe this is a mistake, please open an issue.*';
+              
+              core.setFailed(error);
+            } else {
+              console.log('✅ Security check passed - all files are allowed');
+            }
+
+  validate-commits:
+    name: Validate Conventional Commits
+    needs: security-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout base repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -71,11 +159,14 @@ jobs:
 
   validate-skill-format:
     name: Validate Skill Format
+    needs: security-check
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.title, '[Community Skill]') || contains(join(github.event.pull_request.labels.*.name, ','), 'community-skill')
     steps:
-      - name: Checkout
+      - name: Checkout PR code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get changed files
         id: changed-files
