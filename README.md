@@ -63,9 +63,11 @@ These skills represent patterns and practices I've personally tested and refined
 
 Skills contributed by the community and approved through our voting process.
 
-| Skill | Description | Author | Votes |
-|-------|-------------|--------|-------|
-| *Coming soon* | Be the first to contribute! | - | - |
+| Skill | Description | Author |
+|-------|-------------|--------|
+| [electron](community/electron) | Electron patterns for building cross-platform desktop applications. | @gentleman-programming |
+| [elixir-antipatterns](community/elixir-antipatterns) | Core catalog of 8 critical Elixir/Phoenix anti-patterns covering error handli... | @tsardinasGitHub |
+| [react-native](community/react-native) | React Native patterns for mobile app development with Expo and bare workflow. | @gentleman-programming |
 
 ## Installation
 
