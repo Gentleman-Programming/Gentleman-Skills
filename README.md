@@ -67,7 +67,10 @@ Skills contributed by the community and approved through our voting process.
 |-------|-------------|--------|
 | [electron](community/electron) | Electron patterns for building cross-platform desktop applications. | @gentleman-programming |
 | [elixir-antipatterns](community/elixir-antipatterns) | Core catalog of 8 critical Elixir/Phoenix anti-patterns covering error handli... | @tsardinasGitHub |
+| [hexagonal-architecture-layers-java](community/hexagonal-architecture-layers-java) | Hexagonal architecture layering for Java services with strict boundaries. | @diegnghrmr |
+| [java-21](community/java-21) | Java 21 language and runtime patterns for modern, safe code. | @diegnghrmr |
 | [react-native](community/react-native) | React Native patterns for mobile app development with Expo and bare workflow. | @gentleman-programming |
+| [spring-boot-3](community/spring-boot-3) | Spring Boot 3 patterns for configuration, DI, and web services. | @diegnghrmr |
 
 ## Installation
 
