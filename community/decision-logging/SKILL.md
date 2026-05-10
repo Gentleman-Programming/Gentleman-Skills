@@ -1,48 +1,57 @@
 ---
 name: decision-logging
-description: "Trigger: log decision, audit trail, decision logging. Log AI decisions with immutable chain, reasoning, export to TXT or Markdown."
+description: "Trigger: loguear decisiones, registrar elecciones, guardar log, why did you do X. Log every AI decision with reasoning chain, multi-format export (TXT/Markdown), tamper-proof hash chain."
 license: Apache-2.0
 metadata:
-  author: JoseMRT2004
-  version: "1.2"
+  author: gentleman-programming
+  version: "1.0"
 ---
 
 ## Activation Contract
 
 Load this skill when:
-- Recording a design choice or library selection
-- Building an audit trail for auth, data mutation, or critical ops
-- User requests a decision log or export to readable format
-- Session ends and decision history must persist
+- You make a decision, choose an approach, or take a path that affects execution
+- The user asks "why did you do X" or "what decisions did you make"
+- User requests "loguear decisiones", "registrar elecciones", "guardar log de decisiones"
+- Building AI agents that need a complete decision audit trail
+- Implementing compliance or explainability requirements
 
 ## Hard Rules
 
-- DecisionEvent is immutable; never overwrite entries
-- Append-only to `.jsonl` with hash chain (prevHash + hash)
-- Export to `.txt` and `.md` locally in `.gentleman/decisions/`
-- Log full context: alternatives considered, reasoning chain, confidence 0-1
-- Never log only the final result — traceback required
+1. **Log EVERY decision** — any moment where you choose a path (framework, pattern, structure, approach, tool)
+2. **Include reasoning** — always write WHY this path was chosen over alternatives
+3. **Never log sensitive data** — sanitize context (no passwords, tokens, PII)
+4. **Use consistent structure** — always `DecisionEvent` interface with categories
+5. **Tamper-proof chain** — each entry MUST include hash of previous entry (prevHash + hash)
+6. **Multi-format support** — export to Markdown, JSON Lines, or TXT based on user intent
 
 ## Decision Gates
 
-| Need | Action |
-|------|--------|
-| Log a decision | `DecisionLogger.log(event)` with full DecisionEvent |
-| Export session | `exportToText()` or `exportToMarkdown()` |
-| Verify chain integrity | `DecisionLogger.verifyChain(filePath)` |
+```
+User specifies format explicitly?   → Use that format
+User asks "documentación"?          → Markdown
+User asks "json/estructurado"?      → JSON Lines
+User asks "log/txt/simple"?         → TXT
+Otherwise                           → JSON Lines (default)
+```
 
 ## Execution Steps
 
-1. Import `DecisionLogger` from `assets/logger.ts`
-2. Initialize: `const logger = new DecisionLogger(sessionId)`
-3. At decision point: `await logger.log({ id, sessionId, timestamp, agent, category, input, decision })`
-4. On session end (if export requested): `await logger.exportToMarkdown(sessionId)`
+1. **Detect decision point** — any moment where you choose a path
+2. **Build DecisionEvent** — capture: id, timestamp, sessionId, agent, category, input.context, input.alternatives, decision.chosen, decision.reasoning, decision.confidence
+3. **Select format** — infer from user intent or use JSON Lines default
+4. **Compute hash** — SHA-256 of previous entry hash + current entry (handled by DecisionLogger)
+5. **Write to log** — append to `.gentleman/decisions/{sessionId}.jsonl`
+6. **On demand export** — call `exportToMarkdown()` or `exportToText()` if requested
 
 ## Output Contract
 
-Return: files created/modified, chain verification status (OK / BROKEN), exported file paths.
+Return:
+- Log file path written (.jsonl)
+- Chain verification status (OK / BROKEN)
+- Exported file paths if export was requested
 
 ## References
 
-- `assets/logger.ts` — DecisionLogger implementation with full DecisionEvent schema and categories
+- `assets/logger.ts` — DecisionLogger implementation with DecisionEvent schema
 - `assets/viewer.ts` — CLI export tool (verify + export)

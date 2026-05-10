@@ -1,17 +1,19 @@
 import { DecisionLogger } from './logger';
 
+const sessionId = process.argv[2] ?? 'session';
+
 async function main() {
-  const sessionId = process.argv[2] || 'latest';
   const logger = new DecisionLogger(sessionId);
-  
-  console.log(`Exporting logs for session ${sessionId}...`);
-  const txtPath = await logger.exportToText(sessionId);
-  console.log(`TXT: ${txtPath}`);
-  const mdPath = await logger.exportToMarkdown(sessionId);
-  console.log(`MD: ${mdPath}`);
-  
-  const isValid = await DecisionLogger.verifyChain(`.gentleman/decisions/${sessionId}.jsonl`);
-  console.log(`Chain integrity: ${isValid ? '✅ OK' : '❌ BROKEN'}`);
+  const path = `.gentleman/decisions/${sessionId}`;
+
+  const verifyResult = await DecisionLogger.verifyChain(`${path}.jsonl`);
+  console.log(`Chain verification: ${verifyResult ? 'OK' : 'BROKEN'}`);
+
+  console.log('Exports:');
+  const md = await logger.exportToMarkdown(sessionId);
+  console.log(`  Markdown: ${md}`);
+  const txt = await logger.exportToText(sessionId);
+  console.log(`  TXT: ${txt}`);
 }
 
-main();
+main().catch(console.error);

@@ -21,7 +21,7 @@ interface DecisionEvent {
   prevHash?: string;
 }
 
-type DecisionCategory = 
+type DecisionCategory =
   | 'architecture'
   | 'implementation'
   | 'tooling'
@@ -68,8 +68,12 @@ export class DecisionLogger {
     text += `Generated: ${new Date().toISOString()}\n\n`;
     for (const e of entries) {
       text += `[${e.timestamp}] ${e.category.toUpperCase()}: ${e.decision.chosen}\n`;
+      text += `Context: ${JSON.stringify(e.input.context)}\n`;
+      text += `Alternatives: ${e.input.alternatives.join(', ')}\n`;
       text += `Reasoning: ${e.decision.reasoning}\n`;
+      text += `Confidence: ${e.decision.confidence}\n`;
       if (e.outcome) text += `Outcome: ${e.outcome}\n`;
+      text += `Hash: ${e.hash}\n`;
       text += `---\n`;
     }
     const outputPath = `.gentleman/decisions/${sessionId}.txt`;
@@ -81,10 +85,19 @@ export class DecisionLogger {
     const entries = await this.readEntries();
     let md = `# Decision Log – Session ${sessionId}\n\n`;
     md += `**Generated:** ${new Date().toISOString()}\n\n`;
-    md += `| Timestamp | Category | Decision | Reasoning |\n`;
-    md += `|-----------|----------|----------|------------|\n`;
     for (const e of entries) {
-      md += `| ${e.timestamp} | ${e.category} | ${e.decision.chosen} | ${e.decision.reasoning} |\n`;
+      md += `## Decision: ${e.decision.chosen}\n\n`;
+      md += `| Field | Value |\n`;
+      md += `|-------|-------|\n`;
+      md += `| Timestamp | ${e.timestamp} |\n`;
+      md += `| Category | ${e.category} |\n`;
+      md += `| Agent | ${e.agent} |\n`;
+      md += `| Confidence | ${e.decision.confidence} |\n`;
+      md += `| Context | \`${JSON.stringify(e.input.context)}\` |\n`;
+      md += `| Alternatives | ${e.input.alternatives.join(', ')} |\n`;
+      md += `| Reasoning | ${e.decision.reasoning} |\n`;
+      if (e.outcome) md += `| Outcome | ${e.outcome} |\n`;
+      md += `| Hash | \`${e.hash}\` |\n\n`;
     }
     const outputPath = `.gentleman/decisions/${sessionId}.md`;
     await fs.writeFile(outputPath, md);
