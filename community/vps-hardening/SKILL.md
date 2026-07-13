@@ -11,6 +11,12 @@ metadata:
 
 Use this skill when hardening or auditing a Linux VPS on Debian/Ubuntu or RHEL-family systems, especially for SSH, MFA, firewall policy, Fail2ban, WireGuard, Docker security, sysctl, or SELinux.
 
+## When to Use
+
+- Hardening a Debian, Ubuntu, RHEL, Rocky, AlmaLinux, or Fedora VPS.
+- Configuring SSH, MFA, firewall policy, Fail2ban, WireGuard, Docker, Trivy, sysctl, or SELinux.
+- Auditing a server before public exposure or before moving SSH behind VPN-only access.
+
 ## Critical Patterns
 
 - Detect the distro family before writing commands; never assume Debian defaults.
